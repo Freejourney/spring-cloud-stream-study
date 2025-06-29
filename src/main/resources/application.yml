@@ -1,0 +1,295 @@
+# Spring Cloud Stream Study - Application Configuration
+# This file demonstrates comprehensive configuration for all Spring Cloud Stream binders
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: spring-cloud-stream-study
+  
+  profiles:
+    # Default profile uses test binder for easy development
+    active: test
+  
+  # Spring Cloud Stream Configuration
+  cloud:
+    stream:
+      # Function definitions - maps to @Bean methods in services
+      # Format: functionName-in-0 for input, functionName-out-0 for output
+      function:
+        definition: userConsumer;userWithHeadersConsumer;departmentalUserConsumer;userTransformer;orderValidator;paymentProcessor;inventoryManager;shippingCoordinator;orderEnricher;orderAggregator
+      
+      # Default binder configuration (when multiple binders are present)
+      default-binder: test
+      
+      # Binding configurations - maps function names to actual destinations
+      bindings:
+        # User Consumer Bindings (Input)
+        userConsumer-in-0:
+          destination: user-events
+          group: user-service-group
+          content-type: application/json
+          consumer:
+            max-attempts: 3              # Retry attempts on failure
+            back-off-initial-interval: 1000  # Initial retry delay (ms)
+            back-off-max-interval: 10000    # Maximum retry delay (ms)
+            back-off-multiplier: 2.0        # Exponential backoff multiplier
+            
+        userWithHeadersConsumer-in-0:
+          destination: user-events-with-headers
+          group: header-processor-group
+          content-type: application/json
+          
+        departmentalUserConsumer-in-0:
+          destination: departmental-users
+          group: department-processor-group
+          content-type: application/json
+          
+        # User Transformer Bindings (Input/Output for processor)
+        userTransformer-in-0:
+          destination: user-raw-events
+          group: transformer-group
+          content-type: application/json
+          
+        userTransformer-out-0:
+          destination: user-transformed-events
+          content-type: application/json
+          
+        # Producer Bindings (Output) - used by StreamBridge
+        user-out-0:
+          destination: user-events
+          content-type: application/json
+            
+        user-partitioned-out-0:
+          destination: user-partitioned-events
+          content-type: application/json
+          producer:
+            partition-count: 5
+            partition-key-expression: headers['partition']
+            
+        user-updates-out-0:
+          destination: user-update-events
+          content-type: application/json
+          
+        user-audit-out-0:
+          destination: audit-events
+          content-type: application/json
+          
+        user-notifications-out-0:
+          destination: notification-events
+          content-type: application/json
+          
+        user-analytics-out-0:
+          destination: analytics-events
+          content-type: application/json
+          
+        # Order Processing Bindings
+        orderValidator-in-0:
+          destination: order-validation-queue
+          group: order-validator-group
+          content-type: application/json
+          
+        paymentProcessor-in-0:
+          destination: payment-processing-queue
+          group: payment-processor-group
+          content-type: application/json
+          
+        inventoryManager-in-0:
+          destination: inventory-management-queue
+          group: inventory-manager-group
+          content-type: application/json
+          
+        shippingCoordinator-in-0:
+          destination: shipping-coordination-queue
+          group: shipping-coordinator-group
+          content-type: application/json
+          
+        orderEnricher-in-0:
+          destination: order-enrichment-queue
+          group: order-enricher-group
+          content-type: application/json
+          
+        orderEnricher-out-0:
+          destination: order-enriched-events
+          content-type: application/json
+          
+        orderAggregator-in-0:
+          destination: order-aggregation-queue
+          group: order-aggregator-group
+          content-type: application/json
+          
+        orderAggregator-out-0:
+          destination: order-summary-events
+          content-type: application/json
+          
+        # Order Event Outputs
+        order-events-out-0:
+          destination: order-events
+          content-type: application/json
+          
+        order-notifications-out-0:
+          destination: order-notifications
+          content-type: application/json
+
+# Logging configuration
+logging:
+  level:
+    com.example.springcloudstream: DEBUG
+    org.springframework.cloud.stream: INFO
+    org.springframework.messaging: INFO
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Management endpoints for monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,stream
+  endpoint:
+    health:
+      show-details: always
+
+---
+# RabbitMQ Profile Configuration
+spring:
+  config:
+    activate:
+      on-profile: rabbitmq
+  
+  cloud:
+    stream:
+      default-binder: rabbit
+      
+      bindings:
+        # Override bindings for RabbitMQ-specific features
+        user-out-0:
+          destination: user.exchange
+          content-type: application/json
+            
+        userConsumer-in-0:
+          destination: user.exchange
+          group: user-service-group
+          content-type: application/json
+            
+      # RabbitMQ binder specific settings
+      binder:
+        rabbit:
+          admin-addresses: localhost:15672
+          nodes: localhost:5672
+          username: guest
+          password: guest
+          virtual-host: /
+
+---
+# Kafka Profile Configuration  
+spring:
+  config:
+    activate:
+      on-profile: kafka
+      
+  cloud:
+    stream:
+      default-binder: kafka
+      
+      # Kafka specific configurations
+      kafka:
+        binder:
+          brokers: localhost:9092
+          auto-create-topics: true
+          auto-add-partitions: true
+          
+        streams:
+          binder:
+            application-id: spring-cloud-stream-study
+            brokers: localhost:9092
+            
+      bindings:
+        # Kafka-optimized bindings
+        user-out-0:
+          destination: user-events-topic
+          content-type: application/json
+          producer:
+            partition-count: 3
+            partition-key-expression: payload.department
+            
+        userConsumer-in-0:
+          destination: user-events-topic
+          group: user-service-consumer-group
+          consumer:
+            concurrency: 3               # Number of consumer threads
+            
+      # Kafka binder specific settings
+      binder:
+        kafka:
+          brokers: localhost:9092
+          required-acks: 1               # Acknowledgment level
+          replication-factor: 1          # Replication factor for topics
+          min-partition-count: 1         # Minimum partitions per topic
+          
+        # Kafka consumer properties
+        consumer-properties:
+          key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
+          value.deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+          spring.json.trusted.packages: com.example.springcloudstream.model
+          
+        # Kafka producer properties
+        producer-properties:
+          key.serializer: org.apache.kafka.common.serialization.StringSerializer
+          value.serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+---
+# Pulsar Profile Configuration
+spring:
+  config:
+    activate:
+      on-profile: pulsar
+      
+  cloud:
+    stream:
+      default-binder: pulsar
+      
+      # Pulsar specific configurations
+      pulsar:
+        binder:
+          service-url: pulsar://localhost:6650
+          admin-url: http://localhost:8080
+          
+      bindings:
+        user-out-0:
+          destination: persistent://public/default/user-events
+          content-type: application/json
+          
+        userConsumer-in-0:
+          destination: persistent://public/default/user-events
+          group: user-service-subscription
+          content-type: application/json
+            
+      # Pulsar binder specific settings  
+      binder:
+        pulsar:
+          service-url: pulsar://localhost:6650
+          admin-url: http://localhost:8080
+
+---
+# Test Profile Configuration (Default for development and testing)
+spring:
+  config:
+    activate:
+      on-profile: test
+      
+  cloud:
+    stream:
+      # Use test binder for unit testing and development
+      default-binder: test
+      test:
+        # Test binder doesn't require external message broker
+        # Useful for unit testing and development without infrastructure
+        binder: {}
+        
+# Test-specific logging (more verbose for debugging)
+logging:
+  level:
+    com.example.springcloudstream: TRACE
+    org.springframework.cloud.stream.test: DEBUG 
