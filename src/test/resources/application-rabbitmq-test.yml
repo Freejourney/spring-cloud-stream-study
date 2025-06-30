@@ -1,0 +1,81 @@
+spring:
+  cloud:
+    stream:
+      # Use RabbitMQ binder for integration tests
+      default-binder: rabbit
+      
+      # Function definitions - same as main application
+      function:
+        definition: userConsumer;userWithHeadersConsumer;departmentalUserConsumer;userTransformer
+      
+      # Binding configurations for RabbitMQ testing
+      bindings:
+        # User Consumer Bindings (Input)
+        userConsumer-in-0:
+          destination: user-events
+          group: user-service-test-group
+          content-type: application/json
+          consumer:
+            max-attempts: 3
+            back-off-initial-interval: 1000
+            back-off-max-interval: 5000
+            back-off-multiplier: 2.0
+            
+        userWithHeadersConsumer-in-0:
+          destination: user-events-with-headers
+          group: header-processor-test-group
+          content-type: application/json
+          
+        departmentalUserConsumer-in-0:
+          destination: departmental-users
+          group: department-processor-test-group
+          content-type: application/json
+          
+        # User Transformer Bindings (Input/Output for processor)
+        userTransformer-in-0:
+          destination: user-raw-events
+          group: transformer-test-group
+          content-type: application/json
+          
+        userTransformer-out-0:
+          destination: user-transformed-events
+          content-type: application/json
+          
+        # Producer Bindings (Output) - used by StreamBridge
+        user-out-0:
+          destination: user-events
+          content-type: application/json
+
+      # RabbitMQ binder specific settings for testing
+      binder:
+        rabbit:
+          # Connection settings will be overridden by @DynamicPropertySource
+          # These are defaults that will be replaced by Testcontainers
+          admin-addresses: localhost:15672
+          nodes: localhost:5672
+          username: guest
+          password: guest
+          virtual-host: /
+
+# Logging configuration for tests - minimal verbosity
+logging:
+  level:
+    com.example.springcloudstream: ERROR
+    com.example.springcloudstream.domain.user.consumer.UserConsumerService: ERROR
+    com.example.springcloudstream.domain.user.producer.UserProducerService: ERROR
+    org.springframework.cloud.stream: ERROR
+    org.springframework.amqp: ERROR
+    org.springframework.rabbit: ERROR
+    org.testcontainers: ERROR
+    org.springframework.test: ERROR
+    org.junit: ERROR
+    root: ERROR
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level %logger{20} - %msg%n"
+
+# Disable unnecessary features for testing
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health 

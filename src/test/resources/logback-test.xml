@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Console appender with minimal pattern -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} %-5level %logger{20} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Set all application loggers to ERROR to minimize test output -->
+    <logger name="com.example.springcloudstream" level="ERROR" />
+    <logger name="com.example.springcloudstream.domain.user.consumer.UserConsumerService" level="ERROR" />
+    <logger name="com.example.springcloudstream.domain.user.producer.UserProducerService" level="ERROR" />
+    
+    <!-- Set Spring framework loggers to ERROR -->
+    <logger name="org.springframework" level="ERROR" />
+    <logger name="org.springframework.cloud.stream" level="ERROR" />
+    <logger name="org.springframework.messaging" level="ERROR" />
+    <logger name="org.springframework.test" level="ERROR" />
+    
+    <!-- Set test framework loggers to ERROR -->
+    <logger name="org.junit" level="ERROR" />
+    <logger name="org.mockito" level="ERROR" />
+    
+    <!-- Set messaging system loggers to ERROR -->
+    <logger name="org.apache.kafka" level="ERROR" />
+    <logger name="org.springframework.kafka" level="ERROR" />
+    <logger name="org.springframework.amqp" level="ERROR" />
+    <logger name="org.springframework.rabbit" level="ERROR" />
+    <logger name="org.testcontainers" level="ERROR" />
+    
+    <!-- Root logger - only show ERROR and above -->
+    <root level="ERROR">
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration> 

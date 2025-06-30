@@ -1,0 +1,47 @@
+# Test Configuration for Spring Cloud Stream Study
+# Simplified configuration for unit testing
+
+spring:
+  application:
+    name: spring-cloud-stream-study-test
+    
+  profiles:
+    active: test
+    
+  # Allow bean definition overriding for tests
+  main:
+    allow-bean-definition-overriding: true
+
+  cloud:
+    stream:
+      # Function definitions - only include functions being tested
+      function:
+        definition: userConsumer;userWithHeadersConsumer;departmentalUserConsumer;userTransformer
+      
+      # Use test binder for all tests
+      default-binder: test
+
+# Logging configuration for tests - minimal verbosity
+logging:
+  level:
+    com.example.springcloudstream: ERROR
+    com.example.springcloudstream.domain.user.consumer.UserConsumerService: ERROR
+    com.example.springcloudstream.domain.user.producer.UserProducerService: ERROR
+    org.springframework.cloud.stream: ERROR
+    org.springframework.messaging: ERROR
+    org.springframework.cloud.stream.binder.test: ERROR
+    org.springframework.test: ERROR
+    org.junit: ERROR
+    root: ERROR
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %-5level %logger{20} - %msg%n"
+
+# Management endpoints for testing
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always 

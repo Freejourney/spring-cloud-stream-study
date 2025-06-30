@@ -44,7 +44,6 @@ public class OrderProducerService {
                 .setHeader(MessageHeaders.EVENT_TYPE, "order-created")
                 .setHeader(MessageHeaders.ORDER_ID, order.getId())
                 .setHeader(MessageHeaders.USER_ID, order.getUserId())
-                .setHeader(MessageHeaders.EVENT_TIMESTAMP, System.currentTimeMillis())
                 .setHeader(MessageHeaders.SOURCE_SERVICE, "order-service")
                 .build();
 
@@ -72,7 +71,6 @@ public class OrderProducerService {
                 .setHeader(MessageHeaders.PREVIOUS_STATUS, previousStatus.toString())
                 .setHeader(MessageHeaders.NEW_STATUS, order.getStatus().toString())
                 .setHeader(MessageHeaders.STATUS_CHANGED, !previousStatus.equals(order.getStatus()))
-                .setHeader(MessageHeaders.EVENT_TIMESTAMP, System.currentTimeMillis())
                 .build();
 
             return streamBridge.send("order-status-events", message);
@@ -96,7 +94,6 @@ public class OrderProducerService {
                 .setHeader(MessageHeaders.USER_ID, order.getUserId())
                 .setHeader(MessageHeaders.PRIORITY, determinePriority(order))
                 .setHeader(MessageHeaders.ROUTING_KEY, "fulfillment")
-                .setHeader(MessageHeaders.EVENT_TIMESTAMP, System.currentTimeMillis())
                 .build();
 
             return streamBridge.send("order-fulfillment", message);
@@ -120,7 +117,6 @@ public class OrderProducerService {
                 .setHeader(MessageHeaders.ORDER_ID, order.getId())
                 .setHeader(MessageHeaders.USER_ID, order.getUserId())
                 .setHeader(MessageHeaders.CANCELLATION_REASON, reason)
-                .setHeader(MessageHeaders.EVENT_TIMESTAMP, System.currentTimeMillis())
                 .build();
 
             return streamBridge.send("order-events", message);
@@ -144,7 +140,6 @@ public class OrderProducerService {
                 .setHeader(MessageHeaders.USER_ID, order.getUserId())
                 .setHeader(MessageHeaders.ORDER_VALUE, order.getTotalAmount())
                 .setHeader(MessageHeaders.ORDER_DATE, order.getOrderDate().toString())
-                .setHeader(MessageHeaders.EVENT_TIMESTAMP, System.currentTimeMillis())
                 .build();
 
             return streamBridge.send("analytics-events", message);
@@ -170,7 +165,6 @@ public class OrderProducerService {
                 .setHeader(MessageHeaders.ORDER_VALUE, order.getTotalAmount())
                 .setHeader(MessageHeaders.PRIORITY, "HIGH")
                 .setHeader(MessageHeaders.NOTIFICATION_TYPE, "HIGH_VALUE_ORDER")
-                .setHeader(MessageHeaders.EVENT_TIMESTAMP, System.currentTimeMillis())
                 .build();
 
             return streamBridge.send("notification-events", message);

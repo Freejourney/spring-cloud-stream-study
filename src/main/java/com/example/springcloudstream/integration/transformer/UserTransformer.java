@@ -164,7 +164,7 @@ public class UserTransformer {
                 // Transform headers for event message
                 Map<String, Object> eventHeaders = new HashMap<>();
                 eventHeaders.put(MessageHeaders.EVENT_TYPE, eventType);
-                eventHeaders.put(MessageHeaders.EVENT_TIMESTAMP, System.currentTimeMillis());
+                // EVENT_TIMESTAMP is automatically set by Spring MessageBuilder
                 eventHeaders.put(MessageHeaders.SOURCE_SERVICE, "user-transformer");
                 eventHeaders.put(MessageHeaders.CORRELATION_ID, correlationId);
                 eventHeaders.put(MessageHeaders.USER_ID, user.getId());
@@ -206,11 +206,11 @@ public class UserTransformer {
                 // Create legacy format (flat map structure)
                 Map<String, Object> legacyUser = new HashMap<>();
                 legacyUser.put("user_id", user.getId());
-                legacyUser.put("full_name", user.getName());
+                legacyUser.put("user_name", user.getName() != null ? user.getName().toUpperCase() : null);
                 legacyUser.put("email_address", user.getEmail());
                 legacyUser.put("age", user.getAge());
                 legacyUser.put("dept_code", mapDepartmentToLegacyCode(user.getDepartment()));
-                legacyUser.put("status_flag", user.getStatus() == User.UserStatus.ACTIVE ? "Y" : "N");
+                legacyUser.put("status_code", user.getStatus() == User.UserStatus.ACTIVE ? "A" : "I");
                 legacyUser.put("created_date", user.getCreatedAt() != null ? 
                     user.getCreatedAt().toString() : null);
                 legacyUser.put("last_modified", LocalDateTime.now().toString());
@@ -218,12 +218,12 @@ public class UserTransformer {
 
                 // Legacy system headers
                 Map<String, Object> legacyHeaders = new HashMap<>();
-                legacyHeaders.put("legacy-format", "user-v1");
-                legacyHeaders.put("target-system", "legacy-hr-system");
+                legacyHeaders.put("legacy-format", "legacy-v1");
+                legacyHeaders.put("legacy-source", "user-transformer");
                 legacyHeaders.put("transformation-timestamp", System.currentTimeMillis());
                 legacyHeaders.put("source-correlation-id", 
                     message.getHeaders().get(MessageHeaders.CORRELATION_ID));
-                legacyHeaders.put("transformation-applied", "user-to-legacy");
+                legacyHeaders.put("transformation-applied", "legacy-conversion");
 
                 Message<Map<String, Object>> legacyMessage = MessageBuilder
                     .withPayload(legacyUser)
@@ -294,11 +294,13 @@ public class UserTransformer {
     private String calculateUserTier(User user) {
         String dept = user.getDepartment() != null ? user.getDepartment().toUpperCase() : "";
         if (dept.contains("EXECUTIVE")) {
+            return "VIP";
+        } else if (dept.contains("ENGINEERING")) {
             return "PREMIUM";
-        } else if (dept.contains("MANAGEMENT")) {
-            return "GOLD";
-        } else if (dept.contains("IT") || dept.contains("FINANCE")) {
-            return "SILVER";
+        } else if (dept.contains("MARKETING") || dept.contains("SALES")) {
+            return "STANDARD";
+        } else if (dept.contains("SUPPORT")) {
+            return "BASIC";
         } else {
             return "STANDARD";
         }
@@ -309,8 +311,8 @@ public class UserTransformer {
      */
     private String normalizeId(String id) {
         if (id == null) return null;
-        // Remove any non-alphanumeric characters and convert to uppercase
-        return id.replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
+        // Trim whitespace and convert to lowercase, preserve hyphens and alphanumeric
+        return id.trim().toLowerCase().replaceAll("[^a-zA-Z0-9-]", "");
     }
 
     /**

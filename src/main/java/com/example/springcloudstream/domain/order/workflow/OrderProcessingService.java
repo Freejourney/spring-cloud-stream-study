@@ -279,7 +279,6 @@ public class OrderProcessingService {
                             .setHeader("order-id", order.getId())
                 .setHeader("customer-id", order.getUserId())
             .setHeader("order-status", order.getStatus().toString())
-            .setHeader("timestamp", System.currentTimeMillis())
             .setHeader("destination", destination)
             .build();
 
@@ -337,8 +336,24 @@ public class OrderProcessingService {
             Thread.currentThread().interrupt();
         }
 
-        // Simulate 95% success rate
-        return Math.random() > 0.05;
+        // Deterministic payment logic for testing
+        // Payment fails for negative amounts or invalid payment methods
+        if (order.getTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            return false;
+        }
+        
+        // Payment fails for orders with no payment method or invalid payment method
+        if (order.getPaymentMethod() == null || order.getPaymentMethod().isEmpty()) {
+            return false;
+        }
+        
+        // Payment fails for specific test scenarios (orders with "FAIL" in the ID)
+        if (order.getId() != null && order.getId().contains("FAIL")) {
+            return false;
+        }
+
+        // Otherwise payment succeeds
+        return true;
     }
 
     /**

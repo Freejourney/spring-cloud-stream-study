@@ -224,6 +224,11 @@ public class Order {
             return this;
         }
 
+        public OrderBuilder priority(OrderPriority priority) {
+            order.setPriority(priority);
+            return this;
+        }
+
         public Order build() {
             return order;
         }
